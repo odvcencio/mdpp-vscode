@@ -10,7 +10,15 @@ This is early software. The sharp edge is also the reason it exists: Markdown++ 
 
 ## Install
 
-Install **Markdown++** from the Visual Studio Marketplace under the `m31labs` publisher.
+Install **Markdown++** from the Visual Studio Marketplace under the `m31labs` publisher once the listing is approved.
+
+Until then, install the packaged VSIX from the GitHub Release:
+
+```bash
+code --install-extension markdown-plus-plus-0.1.10.vsix
+```
+
+Release package: https://github.com/odvcencio/mdpp-vscode/releases/tag/v0.1.10
 
 The extension downloads `mdpp-lsp` from the matching GitHub Release on first activation and verifies the downloaded binary against the release `checksums.txt`. To use a local server build instead, set:
 
