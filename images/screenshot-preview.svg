@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
+  <rect width="100%" height="100%" fill="#f7f9fc"/>
+  <rect x="48" y="42" width="1104" height="591" rx="10" fill="#ffffff" stroke="#cfd7e6" stroke-width="2"/>
+<rect x="48" y="42" width="1104" height="44" rx="10" fill="#10151f"/>
+<circle cx="78" cy="64" r="7" fill="#d92d20"/><circle cx="102" cy="64" r="7" fill="#f59f00"/><circle cx="126" cy="64" r="7" fill="#2f9e44"/>
+   <rect x="82" y="118" width="486" height="462" fill="#fbfcff" stroke="#cfd7e6"/>
+   <rect x="632" y="118" width="486" height="462" fill="#ffffff" stroke="#cfd7e6"/>
+   <text x="108" y="170" font-family="Inter,Arial" font-size="30" font-weight="700" fill="#10151f"># Launch notes</text>
+   <text x="108" y="224" font-family="monospace" font-size="22" fill="#2563eb">[[toc]]</text>
+   <text x="108" y="280" font-family="monospace" font-size="22" fill="#10151f">&gt; [!TIP] Preview tracks the source.</text>
+   <text x="108" y="336" font-family="monospace" font-size="22" fill="#10151f">:::details "Build"</text>
+   <text x="108" y="390" font-family="monospace" font-size="22" fill="#10151f">Run mdpp render --format=pdf</text>
+   <text x="666" y="174" font-family="Inter,Arial" font-size="34" font-weight="700" fill="#10151f">Launch notes</text>
+   <rect x="666" y="214" width="360" height="88" rx="6" fill="#ecfdf3" stroke="#b7ebc6"/>
+   <text x="690" y="266" font-family="Inter,Arial" font-size="22" fill="#10151f">Preview tracks the source.</text>
+   <rect x="666" y="338" width="392" height="128" rx="6" fill="#f8fafc" stroke="#cfd7e6"/>
+   <text x="690" y="396" font-family="Inter,Arial" font-size="22" fill="#10151f">Build</text>
+   <path d="M575 342h48" stroke="#2f9e44" stroke-width="8" stroke-linecap="round"/>
+</svg>

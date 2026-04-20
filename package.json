@@ -1,0 +1,182 @@
+{
+  "name": "markdown-plus-plus",
+  "displayName": "Markdown++",
+  "description": "Grammar-backed Markdown language support with diagnostics, formatting, live preview, and PDF export.",
+  "version": "0.1.10",
+  "publisher": "m31labs",
+  "license": "MIT",
+  "icon": "images/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/odvcencio/mdpp-vscode.git"
+  },
+  "bugs": {
+    "url": "https://github.com/odvcencio/mdpp-vscode/issues"
+  },
+  "homepage": "https://markdownpp.m31labs.dev",
+  "qna": "marketplace",
+  "pricing": "Free",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "extensionKind": [
+    "workspace"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "Language features and preview are available. Render and export commands execute the configured mdpp CLI."
+    }
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Formatters",
+    "Other"
+  ],
+  "keywords": [
+    "markdown",
+    "markdown-plus-plus",
+    "lsp",
+    "formatter",
+    "linter",
+    "preview",
+    "pdf",
+    "gotreesitter"
+  ],
+  "activationEvents": [
+    "onLanguage:markdown",
+    "onLanguage:markdown-plus-plus",
+    "onCommand:markdownpp.renderHtml",
+    "onCommand:markdownpp.exportPdf",
+    "onCommand:markdownpp.openPreview"
+  ],
+  "main": "./out/src/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "markdown-plus-plus",
+        "aliases": [
+          "Markdown++",
+          "markdown-plus-plus"
+        ],
+        "extensions": [
+          ".md",
+          ".markdown"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "markdown-plus-plus",
+        "scopeName": "text.html.markdown.mdpp",
+        "path": "./syntaxes/markdown-plus-plus.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "markdownpp.renderHtml",
+        "title": "Markdown++: Render to HTML"
+      },
+      {
+        "command": "markdownpp.exportPdf",
+        "title": "Markdown++: Export to PDF"
+      },
+      {
+        "command": "markdownpp.openPreview",
+        "title": "Markdown++: Open Live Preview"
+      },
+      {
+        "command": "markdownpp.openPreviewToSide",
+        "title": "Markdown++: Open Preview to the Side"
+      },
+      {
+        "command": "markdownpp.restartServer",
+        "title": "Markdown++: Restart Language Server"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "when": "resourceLangId == markdown || resourceLangId == markdown-plus-plus",
+          "command": "markdownpp.openPreviewToSide",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Markdown++",
+      "properties": {
+        "markdownpp.takeOverMarkdownLanguage": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Markdown++ language server features for standard Markdown files."
+        },
+        "markdownpp.preview.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the side-by-side Markdown++ live preview."
+        },
+        "markdownpp.server.path": {
+          "type": "string",
+          "default": "",
+          "description": "Path to mdpp-lsp. Empty uses the extension-managed binary."
+        },
+        "markdownpp.cli.path": {
+          "type": "string",
+          "default": "mdpp",
+          "description": "Path to the mdpp CLI used by render/export commands."
+        },
+        "markdownpp.release.baseUrl": {
+          "type": "string",
+          "default": "https://github.com/odvcencio/mdpp/releases/download",
+          "description": "Base URL used to download mdpp-lsp when the managed binary is missing."
+        },
+        "markdownpp.binary.version": {
+          "type": "string",
+          "default": "v0.1.10",
+          "description": "mdpp release tag to use for the managed LSP binary."
+        },
+        "markdownpp.format.onSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Format Markdown++ documents before save using the mdpp formatter."
+        },
+        "markdownpp.pdf.paper": {
+          "type": "string",
+          "default": "letter",
+          "enum": [
+            "letter",
+            "a4",
+            "legal"
+          ],
+          "description": "Paper size for Markdown++ PDF export."
+        },
+        "markdownpp.pdf.margin": {
+          "type": "number",
+          "default": 0.5,
+          "description": "PDF margin in inches."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "vscode:prepublish": "npm run compile",
+    "generate-assets": "node scripts/generate-assets.mjs",
+    "test": "npm run compile && node --test out/test/*.test.js",
+    "prepackage": "npm test",
+    "package": "vsce package"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.6.1",
+    "typescript": "^5.9.0"
+  }
+}

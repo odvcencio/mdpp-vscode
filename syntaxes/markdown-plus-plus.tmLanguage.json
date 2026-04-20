@@ -1,0 +1,74 @@
+{
+  "name": "Markdown++",
+  "scopeName": "text.html.markdown.mdpp",
+  "patterns": [
+    { "include": "#directives" },
+    { "include": "#containers" },
+    { "include": "#admonitions" },
+    { "include": "#footnotes" },
+    { "include": "#math" },
+    { "include": "#emoji" }
+  ],
+  "repository": {
+    "directives": {
+      "patterns": [
+        {
+          "name": "keyword.control.directive.toc.mdpp",
+          "match": "\\[\\[\\s*toc\\s*\\]\\]"
+        },
+        {
+          "name": "keyword.control.directive.embed.mdpp",
+          "match": "\\[\\[\\s*embed\\s*:[^\\]]+\\]\\]"
+        }
+      ]
+    },
+    "containers": {
+      "patterns": [
+        {
+          "name": "entity.name.type.container.mdpp",
+          "match": "^\\s*:{3,}\\s*([A-Za-z][A-Za-z0-9_-]*)",
+          "captures": {
+            "1": { "name": "entity.name.type.container.mdpp" }
+          }
+        }
+      ]
+    },
+    "admonitions": {
+      "patterns": [
+        {
+          "name": "keyword.control.admonition.mdpp",
+          "match": "^\\s*>\\s*\\[!(NOTE|TIP|WARNING|CAUTION|IMPORTANT)\\]"
+        }
+      ]
+    },
+    "footnotes": {
+      "patterns": [
+        {
+          "name": "constant.other.footnote.mdpp",
+          "match": "\\[\\^[A-Za-z0-9_-]+\\]"
+        }
+      ]
+    },
+    "math": {
+      "patterns": [
+        {
+          "name": "markup.math.inline.mdpp",
+          "match": "\\$[^$\\n]+\\$"
+        },
+        {
+          "name": "markup.math.block.mdpp",
+          "begin": "^\\s*\\$\\$\\s*$",
+          "end": "^\\s*\\$\\$\\s*$"
+        }
+      ]
+    },
+    "emoji": {
+      "patterns": [
+        {
+          "name": "constant.character.emoji.mdpp",
+          "match": ":[a-z0-9_+-]+:"
+        }
+      ]
+    }
+  }
+}
