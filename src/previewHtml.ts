@@ -1,30 +1,90 @@
-export function previewHTML(nonce: string): string {
+import * as vscode from "vscode";
+
+export interface PreviewResources {
+  cspSource: string;
+  cssUri: vscode.Uri;
+  diagramsUri: vscode.Uri;
+}
+
+export function previewHTML(nonce: string, resources: PreviewResources): string {
+  const { cspSource, cssUri, diagramsUri } = resources;
+  const csp = [
+    `default-src 'none'`,
+    `img-src ${cspSource} https: data:`,
+    `style-src ${cspSource} 'unsafe-inline'`,
+    `font-src ${cspSource} https: data:`,
+    `script-src ${cspSource} 'nonce-${nonce}' https://cdn.jsdelivr.net`,
+    `connect-src https://cdn.jsdelivr.net`,
+  ].join("; ");
+
   return `<!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="${csp}">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body { font-family: var(--vscode-font-family); line-height: 1.5; padding: 16px 24px; color: var(--vscode-editor-foreground); background: var(--vscode-editor-background); }
-    pre, code { font-family: var(--vscode-editor-font-family); }
-    pre { background: var(--vscode-textCodeBlock-background); padding: 12px; border-radius: 6px; overflow: auto; }
-    table { border-collapse: collapse; width: 100%; }
-    th, td { border: 1px solid var(--vscode-panel-border); padding: 4px 8px; }
-    blockquote { border-left: 4px solid var(--vscode-panel-border); margin-left: 0; padding-left: 12px; color: var(--vscode-descriptionForeground); }
-    .admonition, .mdpp-container, .mdpp-toc, .mdpp-embed { border: 1px solid var(--vscode-panel-border); border-radius: 6px; padding: 8px 12px; margin: 1em 0; }
-    .admonition-title, .mdpp-container-title { font-weight: 700; margin-top: 0; }
-    .mdpp-embed-youtube, .mdpp-embed-vimeo { border-left-width: 4px; }
-    .mdpp-toc a { text-decoration: none; }
-  </style>
+  <link rel="stylesheet" href="${cssUri}">
 </head>
 <body>
   <main id="content"></main>
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
+    let lastFragments = [];
+    const content = () => document.getElementById("content");
+    const rerenderDiagrams = (root = document) => {
+      const runtime = window.M31Diagrams;
+      if (runtime && typeof runtime.render === "function") {
+        try { void runtime.render(root); } catch (_) { /* ignore */ }
+      }
+    };
+    const setFragmentAttrs = (node, fragment) => {
+      node.dataset.mdppFragment = String(fragment.index);
+      node.dataset.mdppFragmentType = fragment.type || "";
+      const range = fragment.range || {};
+      for (const [key, value] of Object.entries(range)) {
+        node.dataset["mdpp" + key.charAt(0).toUpperCase() + key.slice(1)] = String(value);
+      }
+    };
+    const fragmentNode = (fragment) => {
+      const node = document.createElement("div");
+      node.className = "mdpp-preview-fragment";
+      setFragmentAttrs(node, fragment);
+      node.innerHTML = fragment.html || "";
+      return node;
+    };
+    const renderFragments = (root, fragments) => {
+      if (!Array.isArray(fragments) || fragments.length === 0) {
+        return false;
+      }
+      const existing = Array.from(root.children);
+      const canPatch = existing.length === fragments.length && existing.every((node) => node.classList.contains("mdpp-preview-fragment"));
+      if (!canPatch) {
+        root.replaceChildren(...fragments.map(fragmentNode));
+        lastFragments = fragments.map(fragment => fragment.html || "");
+        return true;
+      }
+      for (const [index, fragment] of fragments.entries()) {
+        const node = existing[index];
+        setFragmentAttrs(node, fragment);
+        const html = fragment.html || "";
+        if (lastFragments[index] !== html) {
+          node.innerHTML = html;
+        }
+      }
+      lastFragments = fragments.map(fragment => fragment.html || "");
+      return true;
+    };
     window.addEventListener("message", event => {
       const message = event.data;
       if (message.type === "render") {
-        document.getElementById("content").innerHTML = message.html || "";
+        const root = content();
+        if (!root) return;
+        if (!renderFragments(root, message.fragments)) {
+          root.innerHTML = message.html || "";
+          lastFragments = [];
+        }
+        root.dataset.mdppVersion = String(message.version || "");
+        rerenderDiagrams(root);
       } else if (message.type === "scrollTo") {
         const maxScroll = Math.max(1, document.body.scrollHeight - window.innerHeight);
         const ratio = Math.max(0, Math.min(1, Number(message.ratio) || 0));
@@ -47,6 +107,7 @@ export function previewHTML(nonce: string): string {
     }, { passive: true });
     vscode.postMessage({ type: "ready" });
   </script>
+  <script nonce="${nonce}" src="${diagramsUri}"></script>
 </body>
 </html>`;
 }

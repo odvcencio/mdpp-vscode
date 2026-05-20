@@ -61,6 +61,7 @@
           "markdown-plus-plus"
         ],
         "extensions": [
+          ".mdpp",
           ".md",
           ".markdown"
         ],
@@ -105,6 +106,82 @@
         }
       ]
     },
+    "semanticTokenTypes": [
+      { "id": "heading", "description": "Markdown heading" },
+      { "id": "link", "superType": "string", "description": "Markdown link" },
+      { "id": "footnote", "description": "Markdown footnote reference" },
+      { "id": "math", "description": "LaTeX math content" },
+      { "id": "containerType", "description": "Markdown++ container label" },
+      { "id": "admonitionType", "description": "Admonition label (NOTE, TIP, ...)" },
+      { "id": "emojiShortcode", "description": "Emoji shortcode" },
+      { "id": "frontmatterKey", "description": "YAML frontmatter key" },
+      { "id": "frontmatterValue", "description": "YAML frontmatter value" },
+      { "id": "strikethrough", "description": "Strikethrough span" },
+      { "id": "emphasis", "description": "Emphasis span" },
+      { "id": "taskMarker", "description": "Task-list checkbox marker" },
+      { "id": "definitionTerm", "description": "Definition-list term" },
+      { "id": "tableHeader", "description": "Table header cell" },
+      { "id": "tableSeparator", "description": "Table separator row" },
+      { "id": "imageAlt", "description": "Image alt text" },
+      { "id": "imageUrl", "description": "Image URL" },
+      { "id": "directive", "description": "Markdown++ directive keyword" },
+      { "id": "directiveArgument", "description": "Markdown++ directive argument" }
+    ],
+    "semanticTokenScopes": [
+      {
+        "language": "markdown-plus-plus",
+        "scopes": {
+          "heading": ["markup.heading.markdown"],
+          "link": ["markup.underline.link.markdown"],
+          "emphasis": ["markup.italic.markdown"],
+          "strikethrough": ["markup.strikethrough.markdown"],
+          "math": ["markup.math.markdown"],
+          "footnote": ["constant.other.footnote.markdown"],
+          "admonitionType": ["keyword.control.admonition.mdpp"],
+          "containerType": ["entity.name.type.container.mdpp"],
+          "emojiShortcode": ["constant.character.emoji.markdown"],
+          "directive": ["keyword.control.directive.mdpp"],
+          "directiveArgument": ["variable.parameter.directive.mdpp"],
+          "frontmatterKey": ["entity.name.tag.yaml"],
+          "frontmatterValue": ["string.unquoted.yaml"],
+          "taskMarker": ["constant.other.task.markdown"],
+          "tableHeader": ["markup.table.markdown"],
+          "tableSeparator": ["punctuation.separator.table.markdown"],
+          "imageAlt": ["string.other.image.alt.markdown"],
+          "imageUrl": ["markup.underline.link.image.markdown"],
+          "definitionTerm": ["entity.name.definition.term.mdpp"]
+        }
+      }
+    ],
+    "configurationDefaults": {
+      "[markdown-plus-plus]": {
+        "editor.semanticHighlighting.enabled": true
+      },
+      "editor.semanticTokenColorCustomizations": {
+        "enabled": true,
+        "rules": {
+          "heading:markdown-plus-plus": { "foreground": "#f0c86a", "bold": true },
+          "link:markdown-plus-plus": { "foreground": "#8aa4ff", "underline": true },
+          "footnote:markdown-plus-plus": "#8aa4ff",
+          "math:markdown-plus-plus": "#f0c86a",
+          "containerType:markdown-plus-plus": { "foreground": "#f0c86a", "bold": true },
+          "admonitionType:markdown-plus-plus": { "foreground": "#d7a6ff", "bold": true },
+          "emojiShortcode:markdown-plus-plus": "#8aa4ff",
+          "frontmatterKey:markdown-plus-plus": "#8aa4ff",
+          "frontmatterValue:markdown-plus-plus": "#e5e5f0",
+          "strikethrough:markdown-plus-plus": { "foreground": "#ffffff9e", "strikethrough": true },
+          "emphasis:markdown-plus-plus": { "italic": true },
+          "taskMarker:markdown-plus-plus": "#78d6a3",
+          "definitionTerm:markdown-plus-plus": "#f0c86a",
+          "tableHeader:markdown-plus-plus": { "bold": true },
+          "tableSeparator:markdown-plus-plus": "#ffffff5c",
+          "imageAlt:markdown-plus-plus": "#ffffffa0",
+          "imageUrl:markdown-plus-plus": "#8aa4ff",
+          "directive:markdown-plus-plus": { "foreground": "#d7a6ff", "bold": true },
+          "directiveArgument:markdown-plus-plus": "#ffdf8a"
+        }
+      }
+    },
     "configuration": {
       "title": "Markdown++",
       "properties": {
@@ -140,7 +217,7 @@
         },
         "markdownpp.format.onSave": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "Format Markdown++ documents before save using the mdpp formatter."
         },
         "markdownpp.pdf.paper": {

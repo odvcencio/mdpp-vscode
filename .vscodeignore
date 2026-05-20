@@ -6,6 +6,7 @@ test/**
 scripts/**
 out/test/**
 out/**/*.map
+bin/**
 tsconfig.json
 *.vsix
 images/*.svg

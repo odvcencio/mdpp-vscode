@@ -14,8 +14,56 @@ import { nonce, previewHTML } from "./previewHtml";
 
 let client: LanguageClient | undefined;
 let preview: MarkdownPPPreview | undefined;
+let output: vscode.OutputChannel | undefined;
+let status: vscode.StatusBarItem | undefined;
+
+type MarkdownPPServerInfo = {
+  name: string;
+  version: string;
+  specVersion?: string;
+  buildCommit?: string;
+  buildTime?: string;
+  binaryPath?: string;
+  pid?: number;
+  goVersion?: string;
+};
+
+type PreviewReadyParams = {
+  uri: string;
+  version: number;
+};
+
+type PreviewRange = {
+  startByte: number;
+  endByte: number;
+  startLine: number;
+  startCol: number;
+  endLine: number;
+  endCol: number;
+};
+
+type PreviewFragment = {
+  index: number;
+  type: string;
+  range: PreviewRange;
+  html: string;
+};
+
+type RenderPreviewResult = {
+  uri: string;
+  html: string;
+  fragments?: PreviewFragment[];
+  version: number;
+};
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  output = vscode.window.createOutputChannel("Markdown++");
+  status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 80);
+  status.text = "$(markdown) Markdown++";
+  status.tooltip = "Markdown++ language server";
+  status.show();
+  context.subscriptions.push(output, status);
+
   const config = readConfig();
   const serverPath = await resolveServerBinary(context, config);
   client = startLanguageClient(context, serverPath, config.takeOverMarkdownLanguage);
@@ -42,6 +90,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   if (config.previewEnabled) {
     context.subscriptions.push(vscode.window.onDidChangeTextEditorSelection(() => preview?.syncFromEditor()));
     context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(event => preview?.refreshIfMatches(event.document)));
+    context.subscriptions.push(vscode.workspace.onDidSaveTextDocument(document => {
+      if (!preview || document.uri.toString() !== preview.documentUri()) {
+        return;
+      }
+      void preview.refresh();
+    }));
   }
 }
 
@@ -52,9 +106,14 @@ export async function deactivate(): Promise<void> {
     await client.stop();
     client = undefined;
   }
+  status?.dispose();
+  status = undefined;
+  output?.dispose();
+  output = undefined;
 }
 
 function startLanguageClient(context: vscode.ExtensionContext, serverPath: string, takeOverMarkdown: boolean): LanguageClient {
+  output?.appendLine(`Starting mdpp-lsp: ${serverPath}`);
   const serverOptions: ServerOptions = {
     command: serverPath,
     transport: TransportKind.stdio
@@ -64,18 +123,62 @@ function startLanguageClient(context: vscode.ExtensionContext, serverPath: strin
     : ["markdown-plus-plus"];
   const clientOptions: LanguageClientOptions = {
     documentSelector,
+    outputChannel: output,
     synchronize: {
       configurationSection: "markdownpp"
     }
   };
   const next = new LanguageClient("markdownpp", "Markdown++", serverOptions, clientOptions);
+  next.onNotification("markdownpp/previewReady", (params: PreviewReadyParams) => {
+    preview?.refreshWhenReady(params);
+  });
   context.subscriptions.push({
     dispose: () => {
       void next.stop();
     }
   });
-  void next.start();
+  void next.start().then(
+    () => logServerInfo(next, serverPath),
+    err => {
+      const message = err instanceof Error ? err.message : String(err);
+      output?.appendLine(`mdpp-lsp failed to start: ${message}`);
+      if (status) {
+        status.text = "$(error) Markdown++";
+        status.tooltip = `Markdown++ language server failed: ${message}`;
+      }
+    }
+  );
   return next;
+}
+
+async function logServerInfo(languageClient: LanguageClient, serverPath: string): Promise<void> {
+  try {
+    const info = await languageClient.sendRequest<MarkdownPPServerInfo>("markdownpp/serverInfo");
+    const binary = info.binaryPath || serverPath;
+    output?.appendLine(`mdpp-lsp ${info.version} spec ${info.specVersion || "unknown"} (${info.goVersion || "go"})`);
+    output?.appendLine(`mdpp-lsp binary: ${binary}`);
+    if (info.buildCommit || info.buildTime) {
+      output?.appendLine(`mdpp-lsp build: ${info.buildCommit || "unknown"} ${info.buildTime || ""}`.trim());
+    }
+    if (status) {
+      status.text = `$(markdown) mdpp ${info.version}`;
+      status.tooltip = [
+        `Markdown++ ${info.version}`,
+        `Spec: ${info.specVersion || "unknown"}`,
+        `Binary: ${binary}`,
+        info.buildCommit ? `Commit: ${info.buildCommit}` : undefined,
+        info.buildTime ? `Built: ${info.buildTime}` : undefined
+      ].filter(Boolean).join("\n");
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    output?.appendLine(`mdpp-lsp serverInfo unavailable: ${message}`);
+    output?.appendLine(`mdpp-lsp binary: ${serverPath}`);
+    if (status) {
+      status.text = "$(warning) mdpp";
+      status.tooltip = `Markdown++ server info unavailable\nBinary: ${serverPath}\n${message}`;
+    }
+  }
 }
 
 async function restartClient(context: vscode.ExtensionContext): Promise<void> {
@@ -97,7 +200,7 @@ function readConfig() {
     cliPath: cfg.get<string>("cli.path", "mdpp"),
     releaseBaseUrl: cfg.get<string>("release.baseUrl", "https://github.com/odvcencio/mdpp/releases/download"),
     binaryVersion: cfg.get<string>("binary.version", "v0.1.10"),
-    formatOnSave: cfg.get<boolean>("format.onSave", false),
+    formatOnSave: cfg.get<boolean>("format.onSave", true),
     pdfPaper: cfg.get<string>("pdf.paper", "letter"),
     pdfMargin: cfg.get<number>("pdf.margin", 0.5)
   };
@@ -211,6 +314,12 @@ async function openPreview(context: vscode.ExtensionContext): Promise<void> {
 class MarkdownPPPreview implements vscode.Disposable {
   private readonly panel: vscode.WebviewPanel;
   private disposed = false;
+  private refreshTimer: NodeJS.Timeout | undefined;
+  private inflight: Promise<void> | undefined;
+  private refreshPending = false;
+  private requestSerial = 0;
+  private lastRenderedVersion = -1;
+  private static readonly REFRESH_DEBOUNCE_MS = 300;
 
   constructor(
     context: vscode.ExtensionContext,
@@ -226,7 +335,13 @@ class MarkdownPPPreview implements vscode.Disposable {
         localResourceRoots: [context.extensionUri, vscode.Uri.file(path.dirname(document.uri.fsPath))]
       }
     );
-    this.panel.webview.html = previewHTML(nonce());
+    const cssUri = this.panel.webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, "media", "preview.css"));
+    const diagramsUri = this.panel.webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, "media", "mdpp-diagrams.js"));
+    this.panel.webview.html = previewHTML(nonce(), {
+      cspSource: this.panel.webview.cspSource,
+      cssUri,
+      diagramsUri
+    });
     this.panel.webview.onDidReceiveMessage(message => {
       if (message.type === "ready") {
         void this.refresh();
@@ -242,7 +357,15 @@ class MarkdownPPPreview implements vscode.Disposable {
       return;
     }
     this.disposed = true;
+    if (this.refreshTimer) {
+      clearTimeout(this.refreshTimer);
+      this.refreshTimer = undefined;
+    }
     this.panel.dispose();
+  }
+
+  documentUri(): string {
+    return this.document.uri.toString();
   }
 
   refreshIfMatches(document: vscode.TextDocument): void {
@@ -250,17 +373,74 @@ class MarkdownPPPreview implements vscode.Disposable {
       return;
     }
     this.document = document;
+    this.scheduleRefresh();
+  }
+
+  refreshWhenReady(params: PreviewReadyParams): void {
+    if (this.disposed || params.uri !== this.document.uri.toString()) {
+      return;
+    }
+    if (params.version < this.document.version) {
+      return;
+    }
     void this.refresh();
+  }
+
+  scheduleRefresh(): void {
+    if (this.disposed) {
+      return;
+    }
+    if (this.refreshTimer) {
+      clearTimeout(this.refreshTimer);
+    }
+    this.refreshTimer = setTimeout(() => {
+      this.refreshTimer = undefined;
+      void this.refresh();
+    }, MarkdownPPPreview.REFRESH_DEBOUNCE_MS);
   }
 
   async refresh(): Promise<void> {
     if (this.disposed) {
       return;
     }
-    const result = await this.languageClient.sendRequest<{ html: string }>("markdownpp/renderPreview", {
-      textDocument: { uri: this.document.uri.toString() }
+    if (this.inflight) {
+      this.refreshPending = true;
+      return;
+    }
+    this.inflight = this.runRender();
+    try {
+      await this.inflight;
+    } finally {
+      this.inflight = undefined;
+      if (this.refreshPending && !this.disposed) {
+        this.refreshPending = false;
+        void this.refresh();
+      }
+    }
+  }
+
+  private async runRender(): Promise<void> {
+    const uri = this.document.uri.toString();
+    const requestVersion = this.document.version;
+    const serial = ++this.requestSerial;
+    const result = await this.languageClient.sendRequest<RenderPreviewResult>("markdownpp/renderPreview", {
+      textDocument: { uri },
+      fragments: true
     });
-    this.panel.webview.postMessage({ type: "render", html: result.html });
+    if (this.disposed) {
+      return;
+    }
+    if (serial !== this.requestSerial || result.version < this.document.version || result.version < requestVersion) {
+      output?.appendLine(`Dropped stale preview for ${uri}: result=${result.version}, document=${this.document.version}`);
+      return;
+    }
+    this.lastRenderedVersion = result.version;
+    this.panel.webview.postMessage({
+      type: "render",
+      html: result.html,
+      fragments: result.fragments || [],
+      version: result.version
+    });
   }
 
   syncFromEditor(): void {

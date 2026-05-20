@@ -15,6 +15,11 @@ export async function resolveServerBinary(context: VSCode.ExtensionContext, conf
     return config.serverPath;
   }
 
+  const localDev = localDevelopmentBinary(context);
+  if (localDev) {
+    return localDev;
+  }
+
   const bundled = context.asAbsolutePath(path.join("bin", binaryName()));
   if (fs.existsSync(bundled)) {
     return bundled;
@@ -37,6 +42,19 @@ export async function resolveServerBinary(context: VSCode.ExtensionContext, conf
     }
   );
   return managed;
+}
+
+export function localDevelopmentBinary(context: Pick<VSCode.ExtensionContext, "extensionPath">): string | undefined {
+  const candidates = [
+    path.resolve(context.extensionPath, "..", "mdpp", binaryName()),
+    path.resolve(context.extensionPath, "..", "..", "mdpp", binaryName())
+  ];
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return undefined;
 }
 
 async function downloadManagedBinary(targetPath: string, config: BinaryConfig): Promise<void> {

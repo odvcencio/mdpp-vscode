@@ -7,7 +7,8 @@
     { "include": "#admonitions" },
     { "include": "#footnotes" },
     { "include": "#math" },
-    { "include": "#emoji" }
+    { "include": "#emoji" },
+    { "include": "text.html.markdown" }
   ],
   "repository": {
     "directives": {

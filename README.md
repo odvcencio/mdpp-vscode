@@ -77,7 +77,7 @@ Then make sure `mdpp` is on your `PATH`, or set:
 | --- | --- | --- |
 | `markdownpp.takeOverMarkdownLanguage` | `true` | Enables Markdown++ language features for normal Markdown files. |
 | `markdownpp.preview.enabled` | `true` | Enables the live preview wiring. |
-| `markdownpp.format.onSave` | `false` | Formats Markdown++ documents before save. |
+| `markdownpp.format.onSave` | `true` | Formats Markdown++ documents before save. |
 | `markdownpp.server.path` | `""` | Absolute path to a manually managed `mdpp-lsp`. |
 | `markdownpp.cli.path` | `"mdpp"` | CLI used by render and PDF export commands. |
 | `markdownpp.binary.version` | `"v0.1.10"` | GitHub Release tag used for managed LSP downloads. |
