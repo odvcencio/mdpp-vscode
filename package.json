@@ -2,7 +2,7 @@
   "name": "markdown-plus-plus",
   "displayName": "Markdown++",
   "description": "Grammar-backed Markdown language support with diagnostics, formatting, live preview, and PDF export.",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "publisher": "m31labs",
   "license": "MIT",
   "icon": "images/icon.png",
