@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.2] - 2026-05-29
+
+### Changed
+
+- Default to the **mdpp v0.4.2** language server. Same engine as v0.4.1 (incl.
+  the html_block termination fix); v0.4.2 is the first release in that line with
+  published LSP binary assets (the v0.4.1 release build was blocked by a
+  local-path module replace, now resolved).
+
 ## [0.2.1] - 2026-05-29
 
 ### Fixed

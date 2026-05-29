@@ -199,7 +199,7 @@ function readConfig() {
     serverPath: cfg.get<string>("server.path", ""),
     cliPath: cfg.get<string>("cli.path", "mdpp"),
     releaseBaseUrl: cfg.get<string>("release.baseUrl", "https://github.com/odvcencio/mdpp/releases/download"),
-    binaryVersion: cfg.get<string>("binary.version", "v0.4.1"),
+    binaryVersion: cfg.get<string>("binary.version", "v0.4.2"),
     formatOnSave: cfg.get<boolean>("format.onSave", true),
     pdfPaper: cfg.get<string>("pdf.paper", "letter"),
     pdfMargin: cfg.get<number>("pdf.margin", 0.5)
