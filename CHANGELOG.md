@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.1] - 2026-05-29
+
+### Fixed
+
+- Default to the **mdpp v0.4.1** language server, which fixes an html_block
+  termination regression: a fenced code block or paragraph immediately after a
+  raw-HTML block (e.g. `<aside>`/`<div>`) followed by a blank line is now parsed
+  correctly instead of collapsing the following block.
+
 ## [0.2.0] - 2026-05-29
 
 ### Changed
